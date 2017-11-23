@@ -21,7 +21,7 @@ begin
       // Optional Guard
       function : boolean
       begin
-        result := not FServant.empty_i;
+        result := not FServant.full_i;
       end
     )
   );
