@@ -6,7 +6,7 @@ uses
 
 type
 
-  IFutureValue<T> = interface
+  IFutureValue<T> = interface(IInterface)
     function GetValue: T;
     property Value: T read GetValue;
   end;

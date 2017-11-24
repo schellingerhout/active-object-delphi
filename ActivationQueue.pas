@@ -7,32 +7,7 @@ uses
 
 Type
 
-  IFutureValue<T> = interface
-    function GetValue: T;
-    property Value: T read GetValue;
-  end;
-
-  TFutureValue<T> = class(TInterfacedObject, IFutureValue<T>)
-  private
-    FResultSet: boolean;
-    FResult: T;
-    FValueReadyEvent: TLightWeightEvent;
-    // consider balance between TEvent and TLightweight event
-    function GetValue: T;
-    function Wait(TimeOut: Cardinal): boolean;
-    function GetValueReadyEvent: TLightWeightEvent;
-
-  protected
-
-
-    property ValueReadyEvent: TLightWeightEvent read GetValueReadyEvent;
-  public
-    destructor Destroy; override;
-    procedure SetValue(AResult: T); // done by methodrequest wrapping a future
-    property Value: T read GetValue;
-  end;
-
-  TMethodRequest = class
+  TMethodRequest = class(TObject)
   private
     FCall: TProc;
     FGuard: TFunc<boolean>;
@@ -47,7 +22,9 @@ Type
   TActivationScheduler = class(TThread)
   private
     FDataReady: TEvent;
+    FGuardedMethodRequests: TList<TMethodRequest>;
     FActivationQueue: TQueue<TMethodRequest>;
+    procedure CallPreviouslyGuarded;
   protected
     // Dispatch the Method Requests on their Servant
     // in the Scheduler’s thread.
@@ -78,6 +55,7 @@ begin
 
   FDataReady := TEvent.Create();
   FActivationQueue := TQueue<TMethodRequest>.Create;
+  FGuardedMethodRequests := TList<TMethodRequest>.Create;
 end;
 
 destructor TActivationScheduler.Destroy;
@@ -85,6 +63,7 @@ begin
   FDataReady.SetEvent;
   FDataReady.Free;
   FActivationQueue.Free;
+  FGuardedMethodRequests.Free;
 
   inherited;
 end;
@@ -101,15 +80,42 @@ begin
   FDataReady.SetEvent;
 end;
 
+procedure TActivationScheduler.CallPreviouslyGuarded;
+var
+  i: integer;
+  LMethodRequest: TMethodRequest;
+begin
+  // deal with previously guarded requests
+  for i := 0 to FGuardedMethodRequests.Count - 1 do
+  begin
+    LMethodRequest := FGuardedMethodRequests[i];
+    if LMethodRequest.guard then
+    begin
+      LMethodRequest.call;
+      LMethodRequest.Free;
+      FGuardedMethodRequests[i] := nil;
+    end;
+    if Terminated then
+      exit;
+  end;
+  FGuardedMethodRequests.Pack;
+end;
+
 procedure TActivationScheduler.Execute;
+
 var
   LMethodRequest: TMethodRequest;
+
   i, LCount: integer;
 begin
+
   inherited;
   while not terminated do
   begin
+
     FDataReady.WaitFor();
+
+    CallPreviouslyGuarded;
 
     system.TMonitor.Enter(FActivationQueue);
     try
@@ -122,26 +128,25 @@ begin
     begin
       system.TMonitor.Enter(FActivationQueue);
       try
-        LMethodRequest := FActivationQueue.Peek;
-        if LMethodRequest.guard then
-        begin
-          LMethodRequest := FActivationQueue.Dequeue;
-          // if its not the same object we have a serious problem in our design
-        end
-        else
-        begin
-          // If method_request fail guards continually or for reasons that are never resolved
-          // this thread will loop around and around and never finish
-          LMethodRequest := nil;
-        end;
-
+        LMethodRequest := FActivationQueue.Dequeue;
       finally
         system.TMonitor.Exit(FActivationQueue);
       end;
 
-      if LMethodRequest <> nil then
-        LMethodRequest.call;
+      if not LMethodRequest.guard then
+      begin
+        FGuardedMethodRequests.Add(LMethodRequest);
+        LMethodRequest := nil;
+      end;
 
+      if LMethodRequest <> nil then
+      begin
+        LMethodRequest.call;
+        // we need to check if the call lifted any guards
+        CallPreviouslyGuarded;
+      end;
+      if Terminated then
+        exit;
     end;
 
     system.TMonitor.Enter(FActivationQueue);
@@ -180,57 +185,6 @@ begin
     result := true
   else
     result := FGuard;
-end;
-
-{ TActiveFuture<T> }
-
-destructor TFutureValue<T>.Destroy;
-begin
-
-  FValueReadyEvent.Free;
-  inherited;
-
-end;
-
-function TFutureValue<T>.GetValue: T;
-begin
-  Wait(INFINITE);
-  result := FResult;
-end;
-
-function TFutureValue<T>.GetValueReadyEvent: TLightWeightEvent;
-var
-  LEvent: TLightWeightEvent;
-begin
-  if FValueReadyEvent = nil then
-  begin
-    LEvent := TLightWeightEvent.Create;
-    if TInterlocked.CompareExchange<TLightWeightEvent>(FValueReadyEvent, LEvent,
-      nil) <> nil then
-      LEvent.Free;
-
-    if FResultSet then
-      FValueReadyEvent.SetEvent;
-  end;
-  result := FValueReadyEvent;
-end;
-
-
-procedure TFutureValue<T>.SetValue(AResult: T);
-begin
-  //raise exception if set twice!
-  FResult := AResult; //no -one can read until we set the flag anyway.
-  FResultSet := true;
-  GetValueReadyEvent.SetEvent;
-end;
-
-function TFutureValue<T>.Wait(TimeOut: Cardinal): boolean;
-begin
-  if not FResultSet then   //set after value is set
-  begin
-    result := ValueReadyEvent.WaitFor(TimeOut) <> TWaitResult.wrTimeout;
-  end;
-
 end;
 
 end.
