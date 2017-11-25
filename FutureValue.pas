@@ -78,11 +78,10 @@ end;
 
 function TFutureValue<T>.Wait: boolean;
 begin
-  if not FResultSet then   //set after value is set
-  begin
+  if FResultSet then   //set after value is set
+    result := true
+  else
     result := ValueReadyEvent.WaitFor(INFINITE) <> TWaitResult.wrTimeout;
-  end;
-
 end;
 
 end.
