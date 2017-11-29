@@ -4,7 +4,7 @@ Active Object Concurrency Design Pattern Implemented in Delphi. A Proxy can wrap
 Source code for blog posts on the Active Object Pattern
 https://schellingerhout.github.io/tags/#active-object
 
-```
+``` pascal
 procedure TProxy.put(const msg: TMessage);
 var
   LMsg: TMessage;
@@ -30,7 +30,7 @@ end;
 
 I also provided a Future interface to enqueue methods that should return values.
 
-```
+``` pascal
 function TProxy.get: IFuture<TMessage>;
 var
   LActiveFuture: TFuture<TMessage>;
