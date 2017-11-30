@@ -1,3 +1,10 @@
+//  
+// Copyright (c) Jasper Schellingerhout. All rights reserved.  
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.  
+//
+// I kindly request that you notify me if you use this in your software projects.
+// Project located at: https://github.com/schellingerhout/active-object-delphi
+
 unit ActivationQueue;
 
 interface
@@ -27,7 +34,7 @@ Type
     procedure CallPreviouslyGuarded;
   protected
     // Dispatch the Method Requests on their Servant
-    // in the Scheduler’s thread.
+    // in the Schedulerâ€™s thread.
 
     procedure Execute; override;
   public
@@ -38,7 +45,7 @@ Type
     // Insert the Method Request into
     // the Activation_Queue. This method
     // runs in the thread of its client, i.e.,
-    // in the Proxy’s thread.
+    // in the Proxyâ€™s thread.
 
     procedure enqueue(AMethodRequest: TMethodRequest);
 
