@@ -31,9 +31,9 @@ end;
 I also provided a Future interface to enqueue methods that should return values.
 
 ``` pascal
-function TProxy.get: IFuture<TMessage>;
+function TProxy.get: IFutureValue<TMessage>;
 var
-  LActiveFuture: TFuture<TMessage>;
+  LActiveFuture: TFutureValue<TMessage>;
 begin
   LActiveFuture := TFutureValue<TMessage>.Create;
   result := LActiveFuture;
