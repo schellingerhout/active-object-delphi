@@ -4,6 +4,7 @@
 //
 // I kindly request that you notify me if you use this in your software projects.
 // Project located at: https://github.com/schellingerhout/active-object-delphi
+// How to use https://schellingerhout.github.io/tags/#active-object
 
 unit ActivationQueue;
 
