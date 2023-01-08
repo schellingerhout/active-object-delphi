@@ -2,7 +2,16 @@
 Active Object Concurrency Design Pattern Implemented in Delphi. A Proxy can wrap a Servant object and run requests to the Servant in a thread. The Servant object does not know of the concurrency system and the Proxy can present a similar interface as the Servant. 
 
 Source code for blog posts on the Active Object Pattern
-https://schellingerhout.github.io/tags/#active-object
+
+[Part 1: Method Requests](https://schellingerhout.github.io/design%20patterns/activeobject-pattern1/)
+
+[Part 2: The Scheduler](https://schellingerhout.github.io/design%20patterns/activeobject-pattern2/)
+
+[Part 3: Futures](https://schellingerhout.github.io/design%20patterns/activeobject-pattern3/)
+
+[Part 4: The Servant and the Proxy](https://schellingerhout.github.io/design%20patterns/activeobject-pattern4/)
+
+
 
 ``` pascal
 procedure TProxy.put(const msg: TMessage);
